@@ -4,6 +4,7 @@ variable vpc_cidr_block {}
 variable subnet_cidr_block {}
 variable avail_zone {}
 variable env_prefix {}
+variable allowed_ip_for_ssh {}
 
 resource "aws_vpc" "terraform-project" {
     cidr_block = var.vpc_cidr_block
@@ -44,3 +45,35 @@ resource "aws_route_table_association" "rtb-subnet-asso" {
     subnet_id = aws_subnet.tf-subnet-1.id
     route_table_id = aws_route_table.tf-route-table.id
 }
+
+resource "aws_security_group" "tf-sg" {
+    name = "tf-sg"
+    vpc_id = aws_vpc.terraform-project.id
+
+    ingress {
+        from_port = 22
+        to_port = 22
+        protocol = "tcp"
+        cidr_blocks = [var.allowed_ip_for_ssh]
+    }
+
+    ingress {
+        from_port = 8080
+        to_port = 8080
+        protocol = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+
+    egress {
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+        prefix_list_ids = []
+    }
+
+    
+    tags = {
+        Name: "${var.env_prefix}-sg"
+    }
+}    
