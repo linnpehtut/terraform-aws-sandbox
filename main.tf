@@ -41,6 +41,19 @@ resource  "aws_route_table" "tf-route-table" {
     }
 }
 
+# The commented lines are to use the default route table instead of creating one
+# resource  "aws_default_route_table" "default-tf-route-table" {
+#     default_route_table_id = aws_vpc.terraform-project.default_route_table_id 
+
+#     route {
+#         cidr_block = "0.0.0.0/0"
+#         gateway_id = aws_internet_gateway.tf-igateway.id
+#     }
+#     tags = {
+#         Name: "${var.env_prefix}-default-routetable-1"
+#     }
+# }
+
 resource "aws_route_table_association" "rtb-subnet-asso" {
     subnet_id = aws_subnet.tf-subnet-1.id
     route_table_id = aws_route_table.tf-route-table.id
@@ -76,4 +89,35 @@ resource "aws_security_group" "tf-sg" {
     tags = {
         Name: "${var.env_prefix}-sg"
     }
-}    
+}
+
+resource "aws_default_security_group" "default-sg" {
+    vpc_id = aws_vpc.terraform-project.id
+
+    ingress {
+        from_port = 22
+        to_port = 22
+        protocol = "tcp"
+        cidr_blocks = [var.allowed_ip_for_ssh]
+    }
+
+    ingress {
+        from_port = 8080
+        to_port = 8080
+        protocol = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+
+    egress {
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+        prefix_list_ids = []
+    }
+
+    
+    tags = {
+        Name: "${var.env_prefix}-default-sg"
+    }
+}  
