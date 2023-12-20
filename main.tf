@@ -1,61 +1,24 @@
-provider "aws" {
-    region = "ap-southeast-1"
-    # access_key = "AKIA55V6L57JMA7UCWTV"
-    # secret_key = "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"
-}
+provider "aws" {}
 
-variable "cidr_blocks" {
-    description = "cidr blocks for vpc and subnets"
-    type = list(string)
-}
+variable vpc_cidr_block {}
+variable subnet_cidr_block {}
+variable avail_zone {}
+variable env_prefix {}
 
-variable "environment" {
-    description = "environment defined"
-}
-
- 
-resource "aws_vpc" "tftest" {
-    cidr_block = var.cidr_blocks[0]
+resource "aws_vpc" "terraform-project" {
+    cidr_block = var.vpc_cidr_block
     tags = {
-        Name: var.environment,
-        vpc_env: "tf"
+        Name: "${var.env_prefix}-vpc"
     }
 }
 
 resource "aws_subnet" "tf-subnet-1" {
-    vpc_id = aws_vpc.tftest.id
-    cidr_block = var.cidr_blocks[1]
-    availability_zone = "ap-southeast-1a"
+    vpc_id = aws_vpc.terraform-project.id
+    cidr_block = var.subnet_cidr_block
+    availability_zone = var.avail_zone
     tags = {
-    Name: "subnet-tftest-1"
+    Name: "${var.env_prefix}subnet-1"
     }
 }
 
-# output "tf-vpc-id" {
-#     value = aws_vpc.tftest
-# }
 
-# output "tf-subnet-id" {
-#     value = aws_subnet.tf-subnet-1
-# }
-
-# data "aws_vpc" "existing_vpc" {
-#     default = true
-# }
-
-# resource "aws_subnet" "tf-subnet-2" {
-#     vpc_id = data.aws_vpc.existing_vpc.id
-#     cidr_block = "172.31.112.0/20"
-#     availability_zone = "ap-southeast-1b"
-#     tags = {
-#         Name: "subnet-tftest"
-#     }        
-# }
-
-# output "tf-vpc-id" {
-#     value = aws_vpc.tftest.id
-# }
-
-# output "tf-subnet-id" {
-#     value = aws_subnet.tf-subnet-1.id
-# }
