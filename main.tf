@@ -5,6 +5,8 @@ variable subnet_cidr_block {}
 variable avail_zone {}
 variable env_prefix {}
 variable allowed_ip_for_ssh {}
+variable instance_type {}
+variable public_key_location {}
 
 resource "aws_vpc" "terraform-project" {
     cidr_block = var.vpc_cidr_block
@@ -120,4 +122,46 @@ resource "aws_default_security_group" "default-sg" {
     tags = {
         Name: "${var.env_prefix}-default-sg"
     }
-}  
+}
+
+data "aws_ami" "latest-amazon-linux-image" {
+    most_recent = true
+    owners = ["amazon"]
+    filter {
+        name = "name"
+        values = ["amzn2-ami-kernel-5.10-hvm-*-x86_64-gp2"]
+    }
+    filter {
+        name = "virtualization-type"
+        values = ["hvm"]
+    }
+}
+# before going straight to resource, u can check with output function of terraform
+# output "aws_ami" {
+#     value = data.aws_ami.latest-amazon-linux-image.id
+# }
+
+resource "aws_key_pair" "terrafor-key" {
+    key_name = "terraform-key"
+    public_key = file(var.public_key_location)
+}
+
+resource "aws_instance" "tf-app-server" {
+    ami = data.aws_ami.latest-amazon-linux-image.id
+    instance_type = var.instance_type
+
+    subnet_id = aws_subnet.tf-subnet-1.id
+    vpc_security_group_ids = [aws_security_group.tf-sg.id, aws_default_security_group.default-sg.id] #we have 2 sg so i will attach 2
+    availability_zone = var.avail_zone
+
+    associate_public_ip_address = true
+    key_name = aws_key_pair.terrafor-key.key_name
+
+    tags = {
+        Name = "${var.env_prefix}-server"
+    }
+}
+
+output "ec2_public_ip" {
+    value = aws_instance.tf-app-server.public_ip
+}
