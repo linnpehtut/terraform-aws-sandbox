@@ -157,6 +157,14 @@ resource "aws_instance" "tf-app-server" {
     associate_public_ip_address = true
     key_name = aws_key_pair.terrafor-key.key_name
 
+    user_data = <<EOF
+                    #!/bin/bash
+                    sudo yum update -y && sudo yum install -y docker
+                    sudo systemctl start docker
+                    sudo usermod -aG docker ec2-user
+                    docker run -p 8080:80 nginx
+                EOF
+
     tags = {
         Name = "${var.env_prefix}-server"
     }
